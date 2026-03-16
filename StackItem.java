@@ -142,18 +142,10 @@ public class StackItem
      */
     public int getHeight()
     {
-        int total = 0;
-
-        if (cup != null) {
-            total += cup.getHeight();
-        }
-
-        if (lid != null) {
-            total += lid.getHeight();
-        }
-
-        return total;
-    }
+        if (cup != null) return cup.getHeight();
+        if (lid != null) return lid.getHeight();
+        return 0;
+    }   
 
     /**
      * Retorna el ancho de dibujo del elemento.

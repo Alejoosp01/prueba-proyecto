@@ -55,37 +55,25 @@ public class TowerTest extends TestCase
     }
 
     /**
-     * Prueba unir taza y tapa.
+     * Prueba unir taza y tapa con cover().
      */
     public void testMergeCupAndLid()
     {
         tower.pushCup(3);
         tower.pushLid(3);
-
+        tower.cover();
+    
         assertTrue(tower.ok());
-        assertEquals(6, tower.height());
+        assertEquals(5, tower.height());
         assertEquals(1, tower.liddedCups().length);
         assertEquals(3, tower.liddedCups()[0]);
         assertEquals(2, tower.stackingItems().length);
         assertEquals("cup", tower.stackingItems()[0][0]);
-        assertEquals("3", tower.stackingItems()[0][1]);
+        assertEquals("3",   tower.stackingItems()[0][1]);
         assertEquals("lid", tower.stackingItems()[1][0]);
-        assertEquals("3", tower.stackingItems()[1][1]);
+        assertEquals("3",   tower.stackingItems()[1][1]);
     }
 
-    /**
-     * Prueba unir tapa y taza.
-     */
-    public void testMergeLidAndCup()
-    {
-        tower.pushLid(5);
-        tower.pushCup(5);
-
-        assertTrue(tower.ok());
-        assertEquals(10, tower.height());
-        assertEquals(1, tower.liddedCups().length);
-        assertEquals(5, tower.liddedCups()[0]);
-    }
 
     /**
      * Prueba taza repetida.
@@ -200,9 +188,11 @@ public class TowerTest extends TestCase
         tower.pushCup(5);
         tower.pushLid(5);
         tower.pushCup(7);
-
+    
+        tower.cover();
+    
         int[] result = tower.liddedCups();
-
+    
         assertEquals(2, result.length);
         assertEquals(2, result[0]);
         assertEquals(5, result[1]);
@@ -279,5 +269,111 @@ public class TowerTest extends TestCase
 
         assertFalse(tower.ok());
         assertEquals(0, tower.stackingItems().length);
+    }
+
+    /**
+     * Una torre con 2 tazas debe tener altura 4 (1+3).
+     */
+    public void testAccordingMVShouldHaveHeightFourWithTwoCups()
+    {
+        Tower t = new Tower(2);
+    
+        assertEquals(4, t.height());
+        assertTrue(t.ok());
+    }
+    
+    /**
+     * swapToReduce debe retornar exactamente 2 objetos cuando hay
+     * una taza y su tapa separadas en la torre.
+     */
+    public void testAccordingMVShouldReturnTwoObjectsInSwapToReduce()
+    {
+        Tower t = new Tower(20, 100);
+        t.pushCup(3);
+        t.pushCup(5);
+        t.pushLid(3);
+    
+        String[][] swap = t.swapToReduce();
+    
+        assertNotNull(swap);
+        assertEquals(2, swap.length);
+    }
+    
+    /**
+     * cover() debe tapar las tazas que tienen su tapa suelta en la torre.
+     */
+    public void testShouldCoverCupsWhenMatchingLidsExist()
+    {
+        Tower t = new Tower(20, 100);
+        t.pushCup(3);
+        t.pushCup(1);
+        t.pushLid(3);
+        t.pushLid(1);
+    
+        assertEquals(0, t.liddedCups().length);
+    
+        t.cover();
+    
+        assertTrue(t.ok());
+        assertEquals(2, t.liddedCups().length);
+        assertEquals(1, t.liddedCups()[0]);
+        assertEquals(3, t.liddedCups()[1]);
+    }
+    
+    /**
+     * cover() no debe tapar las tazas que ya tienen tapa.
+     */
+    public void testShouldNotCoverCupsThatAlreadyHaveLid()
+    {
+        Tower t = new Tower(20, 100);
+        t.pushCup(4);
+        t.pushCup(9);
+        t.pushLid(4);
+        t.pushLid(9);
+    
+        t.cover();
+    
+        int heightAfterFirstCover = t.height();
+    
+        t.cover();
+    
+        assertTrue(t.ok());
+        assertEquals(heightAfterFirstCover, t.height());
+        assertEquals(2, t.liddedCups().length);
+    }
+    
+    /**
+     * cover() en una torre sin parejas no debe cambiar nada.
+     */
+    public void testCoverNoParejesNoHayCambios()
+    {
+        Tower t = new Tower(20, 100);
+        t.pushCup(4);
+        t.pushLid(2);
+    
+        int h = t.height();
+    
+        t.cover();
+    
+        assertTrue(t.ok());
+        assertEquals(h, t.height());
+        assertEquals(0, t.liddedCups().length);
+    }
+    
+    /**
+     * Cuando la taza y su tapa están separadas swapToReduce
+     * debe retornar una sugerencia no nula con 2 objetos.
+     */
+    public void testSwapToReduceRetornaSwapCuandoHayParSeparado()
+    {
+        Tower t = new Tower(20, 100);
+        t.pushCup(3);
+        t.pushCup(5);
+        t.pushLid(3);
+    
+        String[][] suggestion = t.swapToReduce();
+    
+        assertNotNull(suggestion);
+        assertEquals(2, suggestion.length);
     }
 }

@@ -122,31 +122,19 @@ public class Tower
     {
         if (!isValidNumber(number) || containsLid(number)) {
             ok = false;
+            showError("Cannot push lid " + number + ".");
             return;
         }
-
-        Lid lid = new Lid(number);
-
-        if (mergeLidWithExistingCup(lid)) {
-            if (!fitsInTower()) {
-                removeLid(number);
-                ok = false;
-                return;
-            }
-
-            ok = true;
-            refreshView();
-            return;
-        }
-
-        items.push(new StackItem(null, lid));
-
+    
+        items.push(new StackItem(null, new Lid(number)));
+    
         if (!fitsInTower()) {
             items.pop();
             ok = false;
+            showError("Lid " + number + " exceeds the tower height.");
             return;
         }
-
+    
         ok = true;
         refreshView();
     }
@@ -317,7 +305,8 @@ public class Tower
                 numbers.add(new Integer(item.getCupNumber()));
             }
         }
-
+        
+        Collections.sort(numbers);
         int[] result = new int[numbers.size()];
 
         for (int i = 0; i < numbers.size(); i++) {
