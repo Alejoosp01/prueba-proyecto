@@ -7,17 +7,22 @@ public class Cup
     private int height;
     private int width;
     private String color;
+    private static final String[] COLORS = {
+    "blue", "red", "green", "yellow", "magenta", "black"
+    };
+
 
     /**
      * Crea una taza con su número.
      * @param number número de la taza
      */
+
     public Cup(int number)
     {
         this.number = number;
         this.height = (2 * number) - 1;
-        this.width = (2 * number) - 1;
-        this.color = "blue";
+        this.width  = (2 * number) - 1;
+        this.color  = COLORS[(number - 1) % COLORS.length];
     }
 
     /**
@@ -64,4 +69,23 @@ public class Cup
     {
         this.color = color;
     }
-}
+    
+    /**
+     * Retorna el color de fondo interior de la taza (siempre blanco
+     * para mostrar el hueco donde caben tazas más pequeñas).
+     * @return "white"
+     */
+    public String getInnerColor()
+    {
+        return "white";
+    }
+    
+    /**
+     * Retorna el grosor de las paredes en píxeles de escala.
+     * @return 3
+     */
+    public int getWallThickness()
+    {
+        return 3;
+    }
+    }

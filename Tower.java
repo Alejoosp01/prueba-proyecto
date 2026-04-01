@@ -23,19 +23,19 @@ public class Tower
      */
     public Tower(int width, int maxHeight)
     {
-        this.items = new Stack<StackItem>();
-        this.ok = true;
-        this.visible = false;
-        this.width = width;
+        this.items     = new Stack<StackItem>();
+        this.ok        = true;
+        this.visible   = false;
+        this.width     = width;
         this.maxHeight = maxHeight;
-        this.view = new TowerView();
+        this.view      = new TowerView();
     }
 
     /**
-     * Crea una torre vacía.
-     * Con el único parametro que sea con el numero de copas
+     * Crea una torre precargada con n tazas numeradas 1 a cups.
+     * No incluye tapas. Requisito 10 (Ciclo 2).
+     * @param cups número de tazas a crear
      */
-
     public Tower(int cups)
     {
         this(2 * cups - 1, cups * cups);
@@ -53,28 +53,16 @@ public class Tower
     {
         if (!isValidNumber(number) || containsCup(number)) {
             ok = false;
+            showError("Cannot push cup " + number + ".");
             return;
         }
 
-        Cup cup = new Cup(number);
-
-        if (mergeCupWithExistingLid(cup)) {
-            if (!fitsInTower()) {
-                removeCup(number);
-                ok = false;
-                return;
-            }
-
-            ok = true;
-            refreshView();
-            return;
-        }
-
-        items.push(new StackItem(cup, null));
+        items.push(new StackItem(new Cup(number), null));
 
         if (!fitsInTower()) {
             items.pop();
             ok = false;
+            showError("Cup " + number + " exceeds the tower height.");
             return;
         }
 
@@ -87,15 +75,9 @@ public class Tower
      */
     public void popCup()
     {
-        if (items.isEmpty()) {
+        if (items.isEmpty() || !items.peek().hasCup()) {
             ok = false;
-            return;
-        }
-
-        StackItem top = items.peek();
-
-        if (!top.hasCup()) {
-            ok = false;
+            showError("Cannot pop cup.");
             return;
         }
 
@@ -111,6 +93,9 @@ public class Tower
     public void removeCup(int number)
     {
         ok = removeItemByCupNumber(number);
+
+        if (!ok) showError("Cup " + number + " not found.");
+
         refreshView();
     }
 
@@ -125,16 +110,16 @@ public class Tower
             showError("Cannot push lid " + number + ".");
             return;
         }
-    
+
         items.push(new StackItem(null, new Lid(number)));
-    
+
         if (!fitsInTower()) {
             items.pop();
             ok = false;
             showError("Lid " + number + " exceeds the tower height.");
             return;
         }
-    
+
         ok = true;
         refreshView();
     }
@@ -144,15 +129,9 @@ public class Tower
      */
     public void popLid()
     {
-        if (items.isEmpty()) {
+        if (items.isEmpty() || !items.peek().hasLid()) {
             ok = false;
-            return;
-        }
-
-        StackItem top = items.peek();
-
-        if (!top.hasLid()) {
-            ok = false;
+            showError("Cannot pop lid.");
             return;
         }
 
@@ -168,6 +147,9 @@ public class Tower
     public void removeLid(int number)
     {
         ok = removeItemByLidNumber(number);
+
+        if (!ok) showError("Lid " + number + " not found.");
+
         refreshView();
     }
 
@@ -201,16 +183,18 @@ public class Tower
         }
 
         items = reversed;
-        ok = true;
+        ok    = true;
         refreshView();
     }
 
-   /**
-    * Este metodo es swap hace que cambien de posición dos elementos de la torre
-    *usa los paramatros
-    *@param o1 identifica el primer objeto
-    *@param o2 identifica el segundo objeto
-    */
+    /**
+     * Intercambia la posición de dos objetos en la torre.
+     * Cada objeto se identifica con {"cup","4"} o {"lid","4"}.
+     * Falla si alguno no existe o ambos están en el mismo slot.
+     * Requisito 11 (Ciclo 2).
+     * @param o1 identificador del primer objeto
+     * @param o2 identificador del segundo objeto
+     */
     public void swap(String[] o1, String[] o2)
     {
         ArrayList<StackItem> list = new ArrayList<StackItem>(items);
@@ -239,9 +223,11 @@ public class Tower
         refreshView();
     }
 
-   /**
-    * Método que cambia dos cupas de posición
-    */
+    /**
+     * Fusiona cada taza sola con su tapa sola del mismo número.
+     * La tapa queda absorbida: la altura baja 1 cm por par fusionado.
+     * Requisito 12 (Ciclo 2).
+     */
     public void cover()
     {
         ArrayList<StackItem> list  = new ArrayList<StackItem>(items);
@@ -275,7 +261,6 @@ public class Tower
         ok = true;
         refreshView();
     }
-    
 
     /**
      * Retorna la altura total de la torre.
@@ -302,11 +287,12 @@ public class Tower
 
         for (StackItem item : items) {
             if (item.isLiddedCup()) {
-                numbers.add(new Integer(item.getCupNumber()));
+                numbers.add(Integer.valueOf(item.getCupNumber()));
             }
         }
-        
+
         Collections.sort(numbers);
+
         int[] result = new int[numbers.size()];
 
         for (int i = 0; i < numbers.size(); i++) {
@@ -326,11 +312,11 @@ public class Tower
 
         for (StackItem item : items) {
             if (item.hasCup()) {
-                info.add(new String[] {"cup", String.valueOf(item.getCupNumber())});
+                info.add(new String[]{"cup", String.valueOf(item.getCupNumber())});
             }
 
             if (item.hasLid()) {
-                info.add(new String[] {"lid", String.valueOf(item.getLidNumber())});
+                info.add(new String[]{"lid", String.valueOf(item.getLidNumber())});
             }
         }
 
@@ -344,9 +330,12 @@ public class Tower
         return result;
     }
 
-    /*
-     * verifica y revisa la torre si se puede reducir o cambiar posiciones para bajar la altura
-     *
+    /**
+     * Busca un intercambio que al ejecutarse y llamar cover()
+     * reduzca la altura de la torre en al menos 1 cm.
+     * Retorna null si no existe ningún intercambio útil.
+     * Requisito 13 (Ciclo 2).
+     * @return {{"tipo","n"},{"tipo","n"}} o null
      */
     public String[][] swapToReduce()
     {
@@ -359,7 +348,7 @@ public class Tower
 
             for (int j = 0; j < list.size(); j++) {
                 if (j == i || !list.get(j).hasOnlyLid()) continue;
-                if (list.get(j).getLidNumber() != cupNumber)  continue;
+                if (list.get(j).getLidNumber() != cupNumber) continue;
 
                 if (j == i + 1) {
                     return new String[][]{
@@ -386,7 +375,6 @@ public class Tower
 
         return null;
     }
-
 
     /**
      * Hace visible la torre.
@@ -451,9 +439,7 @@ public class Tower
     private boolean containsCup(int number)
     {
         for (StackItem item : items) {
-            if (item.hasCup() && item.getCupNumber() == number) {
-                return true;
-            }
+            if (item.hasCup() && item.getCupNumber() == number) return true;
         }
         return false;
     }
@@ -466,48 +452,8 @@ public class Tower
     private boolean containsLid(int number)
     {
         for (StackItem item : items) {
-            if (item.hasLid() && item.getLidNumber() == number) {
-                return true;
-            }
+            if (item.hasLid() && item.getLidNumber() == number) return true;
         }
-        return false;
-    }
-
-    /**
-     * Une una taza con una tapa sola del mismo número.
-     * @param cup taza a unir
-     * @return true si se pudo unir
-     */
-    private boolean mergeCupWithExistingLid(Cup cup)
-    {
-        for (int i = 0; i < items.size(); i++) {
-            StackItem item = items.get(i);
-
-            if (item.hasOnlyLid() && item.getLidNumber() == cup.getNumber()) {
-                item.setCup(cup);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Une una tapa con una taza sola del mismo número.
-     * @param lid tapa a unir
-     * @return true si se pudo unir
-     */
-    private boolean mergeLidWithExistingCup(Lid lid)
-    {
-        for (int i = 0; i < items.size(); i++) {
-            StackItem item = items.get(i);
-
-            if (item.hasOnlyCup() && item.getCupNumber() == lid.getNumber()) {
-                item.setLid(lid);
-                return true;
-            }
-        }
-
         return false;
     }
 
@@ -518,23 +464,20 @@ public class Tower
      */
     private boolean removeItemByCupNumber(int number)
     {
-        Stack<StackItem> aux = new Stack<StackItem>();
-        boolean removed = false;
+        Stack<StackItem> aux     = new Stack<StackItem>();
+        boolean          removed = false;
 
         while (!items.isEmpty()) {
             StackItem top = items.pop();
 
             if (!removed && top.hasCup() && top.getCupNumber() == number) {
                 removed = true;
-            }
-            else {
+            } else {
                 aux.push(top);
             }
         }
 
-        while (!aux.isEmpty()) {
-            items.push(aux.pop());
-        }
+        while (!aux.isEmpty()) items.push(aux.pop());
 
         return removed;
     }
@@ -546,23 +489,20 @@ public class Tower
      */
     private boolean removeItemByLidNumber(int number)
     {
-        Stack<StackItem> aux = new Stack<StackItem>();
-        boolean removed = false;
+        Stack<StackItem> aux     = new Stack<StackItem>();
+        boolean          removed = false;
 
         while (!items.isEmpty()) {
             StackItem top = items.pop();
 
             if (!removed && top.hasLid() && top.getLidNumber() == number) {
                 removed = true;
-            }
-            else {
+            } else {
                 aux.push(top);
             }
         }
 
-        while (!aux.isEmpty()) {
-            items.push(aux.pop());
-        }
+        while (!aux.isEmpty()) items.push(aux.pop());
 
         return removed;
     }
@@ -588,33 +528,39 @@ public class Tower
             items.push(ordered.get(i));
         }
     }
-    
-   /**
-    * ayuda a encontrar los indices de los objetos en la lista paralas funciones cover y swaptoreduce
-    */
+
+    /**
+     * Retorna el índice del slot que contiene el objeto identificado.
+     * Usado por swap() para encontrar las posiciones a intercambiar.
+     * @param list copia actual de la torre
+     * @param id   arreglo {tipo, número}
+     * @return índice del slot, o -1 si no se encontró
+     */
     private int findItemIndex(ArrayList<StackItem> list, String[] id)
     {
         if (id == null || id.length < 2) return -1;
-    
+
         String type   = id[0];
         int    number = Integer.parseInt(id[1]);
-    
+
         for (int i = 0; i < list.size(); i++) {
             StackItem item = list.get(i);
-    
+
             if ("cup".equals(type) && item.hasCup()
                     && item.getCupNumber() == number) return i;
-    
+
             if ("lid".equals(type) && item.hasLid()
                     && item.getLidNumber() == number) return i;
         }
-    
+
         return -1;
     }
 
     /**
      * Retorna el identificador del objeto dominante en un slot.
      * Las tazas tienen prioridad sobre las tapas.
+     * @param item slot a identificar
+     * @return arreglo {tipo, número}
      */
     private String[] itemIdentifier(StackItem item)
     {
@@ -625,24 +571,23 @@ public class Tower
     }
 
     /**
+     * Actualiza la vista si la torre está visible.
+     */
+    private void refreshView()
+    {
+        if (visible) view.show(items, width, maxHeight);
+    }
+
+    /**
      * Muestra un mensaje de error con JOptionPane solo si la torre está visible.
      * En modo invisible el error se ignora silenciosamente.
+     * @param message texto del error a mostrar
      */
     private void showError(String message)
     {
         if (visible) {
             JOptionPane.showMessageDialog(null, message,
                 "Tower error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    
-    /**
-     * Actualiza la vista si la torre está visible.
-     */
-    private void refreshView()
-    {
-        if (visible) {
-            view.show(items, width, maxHeight);
         }
     }
 }

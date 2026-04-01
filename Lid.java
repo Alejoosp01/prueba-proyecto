@@ -7,6 +7,9 @@ public class Lid
     private int height;
     private int width;
     private String color;
+    private static final String[] COLORS = {
+    "blue", "red", "green", "yellow", "magenta", "black"
+    };
 
     /**
      * Crea una tapa con su número.
@@ -16,8 +19,8 @@ public class Lid
     {
         this.number = number;
         this.height = 1;
-        this.width = (2 * number) - 1;
-        this.color = "red";
+        this.width  = (2 * number) - 1;
+        this.color  = COLORS[(number - 1) % COLORS.length];
     }
 
     /**
